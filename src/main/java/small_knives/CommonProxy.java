@@ -32,5 +32,6 @@ public class CommonProxy {
         e.getRegistry().register(new ItemKnife(Item.ToolMaterial.STONE, "stone_knife"));
         e.getRegistry().register(new ItemKnife(Item.ToolMaterial.IRON, "iron_knife"));
         e.getRegistry().register(new ItemKnife(Item.ToolMaterial.GOLD, "golden_knife"));
+        e.getRegistry().register(new ItemKnife(Item.ToolMaterial.DIAMOND, "diamond_knife"));
     }
 }

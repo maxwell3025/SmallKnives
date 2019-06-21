@@ -16,6 +16,8 @@ public class ModItems {
     public static ItemKnife iron_knife;
     @GameRegistry.ObjectHolder("small_knives:golden_knife")
     public static ItemKnife golden_knife;
+    @GameRegistry.ObjectHolder("small_knives:diamond_knife")
+    public static ItemKnife diamond_knife;
     @SideOnly(Side.CLIENT)
     public static void initModels() {
         wooden_knife.initModel();
