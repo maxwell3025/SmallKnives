@@ -1,0 +1,16 @@
+[
+{
+  "modid": "small_knives",
+  "name": "Small Knives",
+  "description": "Various small tools",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["max31415"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
