@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern":
+  [
+    "   ",
+    " b ",
+    " a "
+  ],
+  "key":
+  {
+    "a":
+    {
+      "type": "forge:ore_dict",
+      "ore": "stickWood"
+    },
+    "b":
+    {
+      "type": "forge:ore_dict",
+      "ore": "gemDiamond"
+    }
+  },
+  "result":
+  {
+    "item": "small_knives:diamond_knife",
+    "count": 1,
+    "data": 0
+  }
+}

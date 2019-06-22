@@ -8,7 +8,7 @@ import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import org.apache.logging.log4j.Logger;
 
-@Mod(modid = SmallKnives.MODID, name = SmallKnives.NAME, version = SmallKnives.VERSION)
+@Mod(modid = SmallKnives.MODID, name = SmallKnives.NAME, version = SmallKnives.VERSION, dependencies = "required-after:forge@[14.23.5.2768,)")
 public class SmallKnives {
     public static final String MODID = "small_knives";
     public static final String NAME = "Small Knives";

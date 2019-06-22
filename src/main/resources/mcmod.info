@@ -3,7 +3,7 @@
   "modid": "small_knives",
   "name": "Small Knives",
   "description": "Various small tools",
-  "version": "${version}",
+  "version": "1.0",
   "mcversion": "${mcversion}",
   "url": "",
   "updateUrl": "",
