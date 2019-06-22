@@ -12,7 +12,7 @@ import org.apache.logging.log4j.Logger;
 public class SmallKnives {
     public static final String MODID = "small_knives";
     public static final String NAME = "Small Knives";
-    public static final String VERSION = "1.0";
+    public static final String VERSION = "1.0.1";
 
     private static Logger logger;
     @SidedProxy(clientSide = "small_knives.ClientProxy", serverSide = "small_knives.ServerProxy")
