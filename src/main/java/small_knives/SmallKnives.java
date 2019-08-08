@@ -1,5 +1,6 @@
 package small_knives;
 
+import io.netty.util.internal.logging.Log4JLoggerFactory;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.SidedProxy;
@@ -8,11 +9,21 @@ import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import org.apache.logging.log4j.Logger;
 
+import java.io.PrintStream;
+
 @Mod(modid = SmallKnives.MODID, name = SmallKnives.NAME, version = SmallKnives.VERSION, dependencies = "required-after:forge@[14.23.5.2768,)")
 public class SmallKnives {
+    public static final PrintStream out;
+
+    static {
+        out = System.out;
+    }
+
     public static final String MODID = "small_knives";
     public static final String NAME = "Small Knives";
     public static final String VERSION = "1.0.1";
+    @Mod.Instance
+    public static SmallKnives INSTANCE;
 
     private static Logger logger;
     @SidedProxy(clientSide = "small_knives.ClientProxy", serverSide = "small_knives.ServerProxy")
@@ -28,6 +39,7 @@ public class SmallKnives {
     public void init(FMLInitializationEvent event) {
         proxy.init(event);
     }
+
     @EventHandler
     public void postInit(FMLPostInitializationEvent event) {
         proxy.postInit(event);

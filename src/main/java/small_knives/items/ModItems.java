@@ -1,11 +1,8 @@
-package small_knives;
+package small_knives.items;
 
-import net.minecraft.item.ItemPickaxe;
-import net.minecraft.item.ItemSword;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import small_knives.knives.*;
 
 public class ModItems {
     @GameRegistry.ObjectHolder("small_knives:wooden_knife")
