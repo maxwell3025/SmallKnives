@@ -5,7 +5,6 @@ import net.minecraft.block.Block;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.projectile.EntitySnowball;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.item.Item;
@@ -22,16 +21,15 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import small_knives.SmallKnives;
 import small_knives.entities.EntityKnife;
-import small_knives.network.KnifeLandMessage;
-import small_knives.network.PacketHandler;
 
 import java.util.Set;
 
 public class ItemKnife extends ItemTool {
-    private static final Set<Block> EFFECTIVE_ON = Sets.newHashSet(Blocks.LEAVES,Blocks.LEAVES2, Blocks.WHEAT, Blocks.GRASS);
+    private static final Set<Block> EFFECTIVE_ON = Sets.newHashSet(Blocks.LEAVES, Blocks.LEAVES2, Blocks.WHEAT);
 
     public Item.ToolMaterial material;
     public String name;
+
     public ItemKnife(Item.ToolMaterial material, String name) {
         super(material, EFFECTIVE_ON);
         this.material = material;
@@ -44,30 +42,30 @@ public class ItemKnife extends ItemTool {
         setUnlocalizedName(SmallKnives.MODID + "." + name);
         this.name = name;
     }
+
     @SideOnly(Side.CLIENT)
     public void initModel() {
         ModelLoader.setCustomModelResourceLocation(this, 0, new ModelResourceLocation(getRegistryName(), "inventory"));
     }
 
     @Override
-    public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn){
+    public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
 
         ItemStack itemstack = playerIn.getHeldItem(handIn);
 
-        if (!playerIn.capabilities.isCreativeMode)
-        {
+
+
+        //worldIn.playSound((EntityPlayer) null, playerIn.posX, playerIn.posY, playerIn.posZ, SoundEvents.ENTITY_ITEM_BREAK, SoundCategory.NEUTRAL, 0.5F, 1.0f);
+
+        if (!worldIn.isRemote) {
+            EntityKnife entityknife = new EntityKnife(worldIn, playerIn, this,playerIn.getHeldItem(handIn).getItemDamage());
+            worldIn.spawnEntity(entityknife);
+            entityknife.shoot(playerIn, playerIn.rotationPitch, playerIn.rotationYaw, 0.0F, 1.0F, 0.0F);
+        }
+
+        if (!playerIn.capabilities.isCreativeMode) {
             itemstack.shrink(1);
         }
-
-        worldIn.playSound((EntityPlayer)null, playerIn.posX, playerIn.posY, playerIn.posZ, SoundEvents.ENTITY_PLAYER_BURP, SoundCategory.NEUTRAL, 0.5F, 0.4F / (itemRand.nextFloat() * 0.4F + 0.8F));
-
-        if (!worldIn.isRemote)
-        {
-            EntityKnife entityknife = new EntityKnife(worldIn, playerIn,this);
-            worldIn.spawnEntity(entityknife);
-            entityknife.shoot(playerIn, playerIn.rotationPitch, playerIn.rotationYaw, 0.0F, 0.5F, 0.0F);
-        }
-
         playerIn.addStat(StatList.getObjectUseStats(this));
         return new ActionResult<ItemStack>(EnumActionResult.PASS, playerIn.getHeldItem(handIn));
     }

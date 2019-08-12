@@ -8,7 +8,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import small_knives.entities.EntityKnife;
 
-public class KnifeLandMessage implements IMessage {
+public class KnifeLandBlockPacket implements IMessage {
     private int entityID = 0;
     private double posX = 0;
     private double posY = 0;
@@ -18,11 +18,12 @@ public class KnifeLandMessage implements IMessage {
     private int tileZ = 0;
     private float rotationYaw = 0;
     private float rotationPitch = 0;
+    private boolean living = true;
 
-    public KnifeLandMessage() {
+    public KnifeLandBlockPacket() {
     }
 
-    public KnifeLandMessage(EntityKnife entity) {
+    public KnifeLandBlockPacket(EntityKnife entity, boolean hasDurability) {
         this.entityID = entity.getEntityId();
         this.posX = entity.posX;
         this.posY = entity.posY;
@@ -32,6 +33,7 @@ public class KnifeLandMessage implements IMessage {
         this.tileZ = entity.zTile;
         this.rotationYaw = entity.rotationYaw;
         this.rotationPitch = entity.rotationPitch;
+        this.living = hasDurability;
     }
 
     @Override
@@ -46,6 +48,7 @@ public class KnifeLandMessage implements IMessage {
         buf.writeInt(tileZ);
         buf.writeFloat(rotationYaw);
         buf.writeFloat(rotationPitch);
+        buf.writeBoolean(living);
     }
 
     @Override
@@ -60,19 +63,19 @@ public class KnifeLandMessage implements IMessage {
         tileZ = buf.readInt();
         rotationYaw = buf.readFloat();
         rotationPitch = buf.readFloat();
+        living = buf.readBoolean();
     }
 
-    public static class Handler implements IMessageHandler<KnifeLandMessage, IMessage> {
+    public static class Handler implements IMessageHandler<KnifeLandBlockPacket, IMessage> {
         // Do note that the default constructor is required, but implicitly defined in this case
         @Override
-        public IMessage onMessage(KnifeLandMessage message, MessageContext ctx) {
+        public IMessage onMessage(KnifeLandBlockPacket message, MessageContext ctx) {
             // This is the player the packet was sent to the server from
-            System.out.print(System.currentTimeMillis()+" hey look at me " + ctx.side + "\n");
             Minecraft minecraft = Minecraft.getMinecraft();
             final WorldClient worldClient = minecraft.world;
             EntityKnife knife = (EntityKnife)worldClient.getEntityByID(message.entityID);
             minecraft.addScheduledTask(()->
-                knife.land(message.posX,message.posY,message.posZ,message.tileX,message.tileY,message.tileZ,message.rotationYaw,message.rotationPitch)
+                knife.landBlock(message.posX,message.posY,message.posZ,message.tileX,message.tileY,message.tileZ,message.rotationYaw,message.rotationPitch,message.living)
             );
             return null;
         }

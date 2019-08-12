@@ -2,49 +2,52 @@ package small_knives.entities;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockCactus;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderItem;
-import net.minecraft.client.renderer.entity.RenderArrow;
-import net.minecraft.client.renderer.entity.RenderEntityItem;
 import net.minecraft.entity.*;
 import net.minecraft.entity.monster.EntityEnderman;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.projectile.EntityArrow;
-import net.minecraft.entity.projectile.EntitySnowball;
 import net.minecraft.init.SoundEvents;
-import net.minecraft.item.ItemBow;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.DamageSource;
 import net.minecraft.util.EntitySelectors;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.*;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import small_knives.SmallKnives;
 import small_knives.items.ItemKnife;
 import small_knives.items.ModItems;
 import small_knives.misc.ModDamageSources;
-import small_knives.network.KnifeLandMessage;
+import small_knives.network.KnifeLandBlockPacket;
+import small_knives.network.KnifeLandEntityPacket;
 import small_knives.network.PacketHandler;
 
 import javax.annotation.Nullable;
-import java.io.File;
-import java.io.FileOutputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class EntityKnife extends Entity {
+
+public class EntityKnife extends Entity implements IEntityAdditionalSpawnData {
     private static final Predicate<Entity> ARROW_TARGETS = Predicates.and(EntitySelectors.NOT_SPECTATING, EntitySelectors.IS_ALIVE, new Predicate<Entity>() {
         public boolean apply(@Nullable Entity p_apply_1_) {
             return p_apply_1_.canBeCollidedWith();
         }
     });
+    private static final Map<ItemKnife, Integer> floatTimes = new HashMap<ItemKnife, Integer>() {{
+        put(ModItems.wooden_knife, 5);
+        put(ModItems.stone_knife, 8);
+        put(ModItems.iron_knife, 13);
+        put(ModItems.golden_knife, 22);
+        put(ModItems.diamond_knife, 20);
+    }};
     public int xTile;
     public int yTile;
     public int zTile;
@@ -59,8 +62,9 @@ public class EntityKnife extends Entity {
     private double damage;
     private boolean insidePlayer = true;
     public int number;
+    private int durability;
     public static int amount = 0;
-    public ItemKnife type  = ModItems.wooden_knife;
+    public ItemKnife item = ModItems.iron_knife;
 
     public EntityKnife(World worldIn) {
         super(worldIn);
@@ -69,7 +73,6 @@ public class EntityKnife extends Entity {
         this.zTile = -1;
         this.damage = 2.0D;
         this.setSize(0.5F, 0.5F);
-        this.ticksFloating = 40;
         amount++;
         number = amount;
         this.inGround = false;
@@ -85,10 +88,12 @@ public class EntityKnife extends Entity {
         this.setPosition(x, y, z);
     }
 
-    public EntityKnife(World worldIn, EntityLivingBase shooter, ItemKnife type) {
+    public EntityKnife(World worldIn, EntityLivingBase shooter, ItemKnife type, int durability) {
         this(worldIn, shooter.posX, shooter.posY + (double) shooter.getEyeHeight() - 0.10000000149011612D, shooter.posZ);
         this.shootingEntity = shooter;
-        this.type = type;
+        this.item = type;
+        this.ticksFloating = floatTimes.get(type);
+        this.durability = durability;
     }
 
     /**
@@ -154,7 +159,7 @@ public class EntityKnife extends Entity {
      */
     @SideOnly(Side.CLIENT)
     public void setPositionAndRotationDirect(double x, double y, double z, float yaw, float pitch, int posRotationIncrements, boolean teleport) {
-            System.out.print(String.format("(%.3f,\t%.3f,\t%.3f)\t(%.3f,\t%.3f)\n", x, y, z, yaw, pitch));
+//        System.out.print(String.format("(%.3f,\t%.3f,\t%.3f)\t(%.3f,\t%.3f)\n", x, y, z, yaw, pitch));
         //new Error().printStackTrace();
         this.setPosition(x, y, z);
         this.setRotation(yaw, pitch);
@@ -179,17 +184,38 @@ public class EntityKnife extends Entity {
             this.ticksInGround = 0;
         }
     }
-    public void land(double posX, double posY, double posZ, int tileX, int tileY, int tileZ, float rotationYaw, float rotationPitch){
-        this.inGround = true;
-        this.xTile = tileX;
-        this.yTile = tileY;
-        this.zTile = tileZ;
-        this.posX = posX;
-        this.posY = posY;
-        this.posZ = posZ;
-        this.rotationYaw = rotationYaw;
-        this.rotationPitch = rotationPitch;
-        System.out.print(world.isRemote+" is the logical side being recieved on\n");
+
+    public void landBlock(double posX, double posY, double posZ, int tileX, int tileY, int tileZ, float rotationYaw, float rotationPitch, boolean hasDurability) {
+        if (hasDurability) {
+            this.inGround = true;
+            this.xTile = tileX;
+            this.yTile = tileY;
+            this.zTile = tileZ;
+            this.posX = posX;
+            this.posY = posY;
+            this.posZ = posZ;
+            this.rotationYaw = rotationYaw;
+            this.rotationPitch = rotationPitch;
+            IBlockState iblockstate = this.world.getBlockState(new BlockPos(xTile, yTile, zTile));
+            this.inTile = iblockstate.getBlock();
+            this.inData = this.inTile.getMetaFromState(iblockstate);
+        } else {
+            for (int i = 0; i < 4; i++) {
+                world.spawnParticle(EnumParticleTypes.ITEM_CRACK, this.posX, this.posY, this.posZ, Math.random() * 0.2 - 0.1 - this.motionX * 0.3, Math.random() * 0.2 - 0.1 - this.motionY * 0.3, Math.random() * 0.2 - 0.1 - this.motionZ * 0.3, Item.REGISTRY.getIDForObject(this.item));
+            }
+            this.setDead();
+
+        }
+    }
+    public void landEntity(double posX, double posY, double posZ, double motionX, double motionY, double motionZ, boolean hasDurability) {
+
+        if(!hasDurability) {
+            for (int i = 0; i < 4; i++) {
+                world.spawnParticle(EnumParticleTypes.ITEM_CRACK, posX, posY, posZ, Math.random() * 0.2 - 0.1 - motionX * 0.3, Math.random() * 0.2 - 0.1 - motionY * 0.3, Math.random() * 0.2 - 0.1 - motionZ * 0.3, Item.REGISTRY.getIDForObject(this.item));
+            }
+            this.setDead();
+
+        }
     }
 
     /**
@@ -205,7 +231,11 @@ public class EntityKnife extends Entity {
             this.prevRotationYaw = this.rotationYaw;
             this.prevRotationPitch = this.rotationPitch;
         }
-
+        if (shootingEntity != null) {
+            if (!this.getEntityBoundingBox().intersects(shootingEntity.getEntityBoundingBox())) {
+                this.insidePlayer = false;
+            }
+        }
         BlockPos blockpos = new BlockPos(this.xTile, this.yTile, this.zTile);
         IBlockState iblockstate = this.world.getBlockState(blockpos);
         Block block = iblockstate.getBlock();
@@ -312,16 +342,17 @@ public class EntityKnife extends Entity {
             this.doBlockCollisions();
         }
     }
+
     /**
      * Called when the arrow hits a block or an entity
      */
     protected void onHit(RayTraceResult raytraceResultIn) {
-        System.out.print(number + " " + world.isRemote + "\tonHit" + "\n");
         Entity entity = raytraceResultIn.entityHit;
+        if (entity instanceof EntityLivingBase) {
+        }
         if (entity != null) {
-
-            if (entity.getEntityId() != shootingEntity.getEntityId()||!this.insidePlayer) {
-                entity.attackEntityFrom(ModDamageSources.KNIFE, this.type.material.getAttackDamage());
+            if (entity.getEntityId() != shootingEntity.getEntityId() || !this.insidePlayer) {
+                entity.attackEntityFrom(ModDamageSources.knife(this.shootingEntity), ((ItemKnife) this.item).material.getAttackDamage() + 2);
                 if (this.isBurning() && !(entity instanceof EntityEnderman)) {
                     entity.setFire(5);
                 }
@@ -334,37 +365,50 @@ public class EntityKnife extends Entity {
                 this.ticksInAir = 0;
 
                 if (!this.world.isRemote) {
-                    this.entityDropItem(this.getKnifeItem(), 0.1F);
+                    if (this.hasDurability()) {
+                        this.entityDropItem(this.getKnifeItem(), 0.1F);
+                    }else{
+                        world.playSound((EntityPlayer) null, this.posX, this.posY, this.posZ, SoundEvents.ENTITY_ITEM_BREAK, SoundCategory.NEUTRAL, 1.0F, 1.0f);
+                    }
+                    this.setDead();
+                } else {
+                    System.out.print("hello\n");
+                    if (!this.hasDurability()) {
+                        for (int i = 0; i < 4; i++) {
+                            world.spawnParticle(EnumParticleTypes.ITEM_CRACK, this.posX, this.posY, this.posZ, Math.random() * 0.2 - 0.1 - this.motionX * 0.3, Math.random() * 0.2 - 0.1 - this.motionY * 0.3, Math.random() * 0.2 - 0.1 - this.motionZ * 0.3, Item.REGISTRY.getIDForObject(this.item));
+                        }
+                    }
+                }
+                PacketHandler.INSTANCE.sendToAll(new KnifeLandEntityPacket(this, this.hasDurability()));
+            }
+        } else {
+            if (this.hasDurability()) {
+                BlockPos blockpos = raytraceResultIn.getBlockPos();
+                this.xTile = blockpos.getX();
+                this.yTile = blockpos.getY();
+                this.zTile = blockpos.getZ();
+                IBlockState iblockstate = this.world.getBlockState(blockpos);
+                this.inTile = iblockstate.getBlock();
+                this.inData = this.inTile.getMetaFromState(iblockstate);
+                this.motionX = (double) ((float) (raytraceResultIn.hitVec.x - this.posX));
+                this.motionY = (double) ((float) (raytraceResultIn.hitVec.y - this.posY));
+                this.motionZ = (double) ((float) (raytraceResultIn.hitVec.z - this.posZ));
+                float f2 = MathHelper.sqrt(this.motionX * this.motionX + this.motionY * this.motionY + this.motionZ * this.motionZ);
+                this.posX -= this.motionX / (double) f2 * 0.05000000074505806D;
+                this.posY -= this.motionY / (double) f2 * 0.05000000074505806D;
+                this.posZ -= this.motionZ / (double) f2 * 0.05000000074505806D;
+                this.playSound(SoundEvents.ENTITY_ARROW_HIT, 1.0F, 1.2F / (this.rand.nextFloat() * 0.2F + 0.9F));
+                this.inGround = true;
+                if (iblockstate.getMaterial() != Material.AIR) {
+                    this.inTile.onEntityCollidedWithBlock(this.world, blockpos, iblockstate, this);
+                }
+            } else {
+                if (!world.isRemote) {
+                    world.playSound((EntityPlayer) null, this.posX, this.posY, this.posZ, SoundEvents.ENTITY_ITEM_BREAK, SoundCategory.NEUTRAL, 1.0F, 1.0f);
                     this.setDead();
                 }
             }
-        } else {
-            System.out.print("helloworld\n");
-            System.out.print(String.format("(%.3f,\t%.3f,\t%.3f)\t(%.3f,\t%.3f)\t%b\n", this.posX, this.posY, this.posZ, this.rotationYaw, this.rotationPitch,world.isRemote));
-            BlockPos blockpos = raytraceResultIn.getBlockPos();
-            this.xTile = blockpos.getX();
-            this.yTile = blockpos.getY();
-            this.zTile = blockpos.getZ();
-            IBlockState iblockstate = this.world.getBlockState(blockpos);
-            this.inTile = iblockstate.getBlock();
-            this.inData = this.inTile.getMetaFromState(iblockstate);
-            this.motionX = (double)((float)(raytraceResultIn.hitVec.x - this.posX));
-            this.motionY = (double)((float)(raytraceResultIn.hitVec.y - this.posY));
-            this.motionZ = (double)((float)(raytraceResultIn.hitVec.z - this.posZ));
-            float f2 = MathHelper.sqrt(this.motionX * this.motionX + this.motionY * this.motionY + this.motionZ * this.motionZ);
-            this.posX -= this.motionX / (double)f2 * 0.05000000074505806D;
-            this.posY -= this.motionY / (double)f2 * 0.05000000074505806D;
-            this.posZ -= this.motionZ / (double)f2 * 0.05000000074505806D;
-            this.playSound(SoundEvents.ENTITY_ARROW_HIT, 1.0F, 1.2F / (this.rand.nextFloat() * 0.2F + 0.9F));
-            this.inGround = true;
-            if (iblockstate.getMaterial() != Material.AIR)
-            {
-                this.inTile.onEntityCollidedWithBlock(this.world, blockpos, iblockstate, this);
-            }
-            if(!world.isRemote){
-                PacketHandler.INSTANCE.sendToAll(new KnifeLandMessage(this));
-                System.out.print(System.currentTimeMillis()+" hey look at me\n");
-            }
+            PacketHandler.INSTANCE.sendToAll(new KnifeLandBlockPacket(this, this.hasDurability()));
         }
     }
 
@@ -447,6 +491,23 @@ public class EntityKnife extends Entity {
         }
     }
 
+    @Override
+    public void writeSpawnData(ByteBuf buf) {
+        if (shootingEntity != null) {
+            buf.writeInt(shootingEntity.getEntityId());
+            buf.writeInt(Item.REGISTRY.getIDForObject(this.item));
+        } else {
+            buf.writeInt(-1);
+        }
+    }
+
+    @Override
+    public void readSpawnData(ByteBuf buf) {
+        this.shootingEntity = world.getEntityByID(buf.readInt());
+        this.item = (ItemKnife) Item.REGISTRY.getObjectById(buf.readInt());
+        this.ticksFloating = floatTimes.get(this.item);
+    }
+
     /**
      * Called by a player entity when they collide with an entity
      */
@@ -454,15 +515,23 @@ public class EntityKnife extends Entity {
         //System.out.print("\n" + number + " " + world.isRemote + "\tonCollideWithPlayer");
         if (this.inGround) {
             if (!this.world.isRemote) {
-                entityIn.inventory.addItemStackToInventory(this.getKnifeItem());
-                entityIn.onItemPickup(this, 1);
+                if (this.hasDurability()) {
+                    entityIn.inventory.addItemStackToInventory(this.getKnifeItem());
+                    entityIn.onItemPickup(this, 1);
+                }
                 this.setDead();
             }
         }
     }
 
     ItemStack getKnifeItem() {
-        return new ItemStack(ModItems.wooden_knife);
+        ItemStack itemstack = new ItemStack(this.item);
+        itemstack.setItemDamage(this.durability + 1);
+        return itemstack;
+    }
+
+    boolean hasDurability() {
+        return this.durability < item.material.getMaxUses();
     }
 
     /**
