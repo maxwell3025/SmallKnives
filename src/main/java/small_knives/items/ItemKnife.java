@@ -53,10 +53,6 @@ public class ItemKnife extends ItemTool {
 
         ItemStack itemstack = playerIn.getHeldItem(handIn);
 
-
-
-        //worldIn.playSound((EntityPlayer) null, playerIn.posX, playerIn.posY, playerIn.posZ, SoundEvents.ENTITY_ITEM_BREAK, SoundCategory.NEUTRAL, 0.5F, 1.0f);
-
         if (!worldIn.isRemote) {
             EntityKnife entityknife = new EntityKnife(worldIn, playerIn, this,playerIn.getHeldItem(handIn).getItemDamage());
             worldIn.spawnEntity(entityknife);
