@@ -159,7 +159,7 @@ public class EntityKnife extends Entity implements IEntityAdditionalSpawnData {
      */
     @SideOnly(Side.CLIENT)
     public void setPositionAndRotationDirect(double x, double y, double z, float yaw, float pitch, int posRotationIncrements, boolean teleport) {
-//        System.out.print(String.format("(%.3f,\t%.3f,\t%.3f)\t(%.3f,\t%.3f)\n", x, y, z, yaw, pitch));
+        //System.out.print(String.format("(%.3f,\t%.3f,\t%.3f)\t(%.3f,\t%.3f)\n", x, y, z, yaw, pitch));
         //new Error().printStackTrace();
         this.setPosition(x, y, z);
         this.setRotation(yaw, pitch);
@@ -298,11 +298,6 @@ public class EntityKnife extends Entity implements IEntityAdditionalSpawnData {
             if (raytraceresult != null && !net.minecraftforge.event.ForgeEventFactory.onProjectileImpact(this, raytraceresult)) {
                 this.onHit(raytraceresult);
             }
-            if (ticksFloating > 0) {
-                for (int k = 0; k < 4; ++k) {
-                    //this.world.spawnParticle(EnumParticleTypes.CRIT, this.posX + this.motionX * (double) k / 4.0D, this.posY + this.motionY * (double) k / 4.0D, this.posZ + this.motionZ * (double) k / 4.0D, -this.motionX, -this.motionY + 0.2D, -this.motionZ);
-                }
-            }
 
             this.posX += this.motionX;
             this.posY += this.motionY;
@@ -326,17 +321,17 @@ public class EntityKnife extends Entity implements IEntityAdditionalSpawnData {
             if (this.isWet()) {
                 this.extinguish();
             }
-            if (ticksFloating < 1) {
-                this.motionX *= (double) airResistance;
-                this.motionY *= (double) airResistance;
-                this.motionZ *= (double) airResistance;
-
-                if (!this.hasNoGravity()) {
-                    this.motionY -= 0.05000000074505806D;
-                }
-            } else {
-                ticksFloating--;
-            }
+//            if (ticksFloating < 1) {
+//                this.motionX *= (double) airResistance;
+//                this.motionY *= (double) airResistance;
+//                this.motionZ *= (double) airResistance;
+//
+//                if (!this.hasNoGravity()) {
+//                    this.motionY -= 0.05000000074505806D;
+//                }
+//            } else {
+//                ticksFloating--;
+//            }
 
             this.setPosition(this.posX, this.posY, this.posZ);
             this.doBlockCollisions();
